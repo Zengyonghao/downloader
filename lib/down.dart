@@ -66,7 +66,7 @@ class DownLoadCore {
         model.currentSize = count;
         controller.add(model);
       });
-      model.state = 2;
+      model.state = 1;
       return model;
     } catch (e) {
       print("出错了"+e.toString());
@@ -74,16 +74,6 @@ class DownLoadCore {
       model.msg = e.toString();
       return model;
     }
-
-    Dio().download(model.realUrl, model.outName,
-        onReceiveProgress: (count, total) {
-      model.size = total;
-      model.currentSize = count;
-      controller.add(model);
-    }).then((value) {
-      model.state = 2;
-      controller.add(model);
-    });
   }
 }
 

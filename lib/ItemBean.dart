@@ -6,13 +6,13 @@ class ItemBean with ChangeNotifier {
   String _path;
   String _sku;
   String _result;
-  int _state;
-  num _size = 0.0;
+  int _state = 0;
+  num _size = 0;
   String _msg;
   String _realUrl;
   String _outName;
   String _outPath;
-  int _currentSize;
+  int _currentSize = 0;
   int _index = 1;
 
   double _progress = 0;
@@ -44,6 +44,7 @@ class ItemBean with ChangeNotifier {
 
   set currentSize(int value) {
     _currentSize = value;
+    notifyListeners();
   }
 
   String get realUrl => _realUrl;
@@ -67,7 +68,8 @@ class ItemBean with ChangeNotifier {
   num get size => _size;
 
   set size(num value) {
-    _size = value;
+    if(_state != value)
+      _size = value;
   }
 
   String get sku => _sku;

@@ -49,6 +49,8 @@ class DownLoadCore {
   Future<ItemBean> downFile(ItemBean model) async {
     try {
       print("开始下载"+model.path);
+        model.path = Uri.decodeFull(model.path);
+        print(model.path);
       var response = await Dio().download(model.path,(Headers responseHeaders){
 
         var outName = model.outPath+Platform.pathSeparator+model.sku+"-"+model.index.toString();

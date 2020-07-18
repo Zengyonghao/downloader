@@ -17,4 +17,13 @@ class ExcelTools {
     }
     return result;
   }
+
+  static Future<List<int>> createExcel( List<ItemBean> datas) {
+    var excel = Excel.createExcel();
+    for(var item in datas){
+      excel.appendRow("Sheet1", [item.sku,item.path]);
+    }
+    return excel.encode();
+  }
 }
+

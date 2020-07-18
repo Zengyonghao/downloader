@@ -2,13 +2,14 @@ import 'dart:io';
 
 import 'package:dio/adapter.dart';
 import 'package:dio/dio.dart';
+import 'package:excel/excel.dart';
 import 'package:file_chooser/file_chooser.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:testbed/parse_excel.dart';
-
+import 'package:url_launcher/url_launcher.dart' as url_launcher;
 import 'ItemBean.dart';
 import 'down.dart';
 
@@ -39,7 +40,7 @@ class _State extends State<Home> {
                 "CoderZeng出品",
                 style: TextStyle(fontSize: 20),
               ),
-              Text("Version:1.1", style: TextStyle(fontSize: 20))
+              Text("Version:1.3", style: TextStyle(fontSize: 20))
             ],
           ),
         ),
@@ -114,7 +115,7 @@ class _State extends State<Home> {
                           datas = handlerData(datas);
                          var parent =  Directory(excelResult).parent;
                           for(var value in datas){
-                            value.outPath = parent.path+Platform.pathSeparator+"download"+Platform.pathSeparator+value.sku;
+                            value.outPath = parent.path+Platform.pathSeparator+"download";
 
                           }
 
@@ -139,24 +140,58 @@ class _State extends State<Home> {
 //
 //
 //
-                      try {
-                        var outParent = Directory(excelResult).parent;
-                        String _localPath = outParent.path +
-                            Platform.pathSeparator + 'Download';
-                        final savedDir = Directory(_localPath);
-                        bool hasExisted = await savedDir.exists();
-                        if (!hasExisted) {
-                          savedDir.create(recursive: true);
-                        }
-                        var  download =    DownLoadCore();
+                        try {
+                          var outParent = Directory(excelResult).parent;
+                          String _localPath = outParent.path +
+                              Platform.pathSeparator + 'Download';
+                          final savedDir = Directory(_localPath);
+                          bool hasExisted = await savedDir.exists();
+                          if (!hasExisted) {
+                            savedDir.create(recursive: true);
+                          }
+                          var  download =    DownLoadCore();
                           download.datas = datas;
                           download.controller.stream.listen((event) {
-                                event.progress = event.currentSize/event.size;
+                            event.progress = event.currentSize/event.size;
+                            if(event.state == -1){
+                              datas.remove(event);
+                              datas.add(event);
+                            }
                           });
 
                           download.down();
-                      }catch (e){
-                      }
+                        }catch (e){
+                        }
+
+                      }),
+                ),
+              ),
+            ),SizedBox(
+              width: 120,
+              height: 40,
+              child: Container(
+                child: Center(
+                  child: CupertinoButton(
+                      padding: EdgeInsets.fromLTRB(5, 0, 5, 0),
+                      color: Colors.blue,
+                      child: Container(child: Text("生成错误列表")),
+                      onPressed: () async {
+                          List<ItemBean> errors = [];
+                          for (var value in datas) {
+                            if (value.state == -1) {
+                                errors.add(value);
+                            }
+                          }
+
+                        var excel =   await ExcelTools.createExcel(errors);
+
+                          var outPath = await
+                          showSavePanel(suggestedFileName: 'error.xlsx');
+                          if(outPath.paths == null||excel == null) return;
+
+                          File(outPath.paths[0])..createSync(recursive: true)
+                          ..writeAsBytesSync(excel);
+
 
                       }),
                 ),
@@ -164,6 +199,41 @@ class _State extends State<Home> {
             )
           ],
         )
+        ,
+        Center(
+          child:
+        Column(
+
+          children: [
+            Container(
+              padding: EdgeInsets.all(20),
+              width: 400,
+              child: Text(
+                "不知道从什么时候开始，在每一个东西上面都有个日子，"
+                    "秋刀鱼会过期，肉酱也会过期，"
+                    "连保鲜纸都会过期。我开始怀疑，"
+                    "在这个世界上，"
+                    "还有什么东西是不会过期的？"
+                    ,style: TextStyle(
+                color: Colors.grey
+
+              ),textAlign: TextAlign.center,)
+
+              ),
+            GestureDetector(
+              child: Text("《重庆森林》",style: TextStyle(
+                color: Colors.blue
+
+              ),),
+              onTap: (){
+                url_launcher
+                    .launch('http://www.dingzi66.com/m/play/1952/456986.html');
+
+              },
+            )
+          ],
+        )),
+
       ],
     ));
   }
@@ -176,7 +246,8 @@ List<ItemBean> handlerData(List<ItemBean> datas) {
     try {
       if(value.path.toLowerCase().split("http").length<3 && value.path.toLowerCase().contains("http")){
         //只有一個
-          result.add(ItemBean()..sku = value.sku..index = index..path=value.path);
+            var path = value.path.substring(value.path.toLowerCase().indexOf("http")).trim();
+          result.add(ItemBean()..sku = value.sku..index = index..path=path);
           continue;
       };
 
@@ -227,7 +298,7 @@ class ListItem extends StatelessWidget {
                       child: Stack(alignment:Alignment.center,children:[Container(
                         height: 20,
                           child:LinearProgressIndicator(
-                        backgroundColor: Color.fromRGBO(250, 250, 250, 0.3),
+                        backgroundColor: Color.fromRGBO(250, 250, 250, 0.45),
                         valueColor: new AlwaysStoppedAnimation<Color>(
                             Color.fromRGBO(2, 129, 252, 0.5)),
                         value: item.progress,
@@ -237,7 +308,7 @@ class ListItem extends StatelessWidget {
                     ])),
                     Text(
                       item.sku+"(${item.index})",
-                      style: TextStyle(color: Colors.white),
+                      style: TextStyle(color: item.state == -1?Colors.red:Colors.white),
                     )
                   ],
                 ),
